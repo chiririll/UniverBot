@@ -1,0 +1,3 @@
+[submodule "Packages/Word4Univer"]
+	path = Packages/Word4Univer
+	url = https://github.com/chiririll/Word4Univer.git
