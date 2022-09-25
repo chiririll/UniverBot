@@ -13,7 +13,15 @@ class Labs:
         SubjectInfo("Subj 8"),
         SubjectInfo("Subj 9"),
         SubjectInfo("Subj 10"),
-        SubjectInfo("Subj 11")
+        SubjectInfo("Subj 11"),
+        SubjectInfo("Subj 12"),
+        SubjectInfo("Subj 13"),
+        SubjectInfo("Subj 14"),
+        SubjectInfo("Subj 15"),
+        SubjectInfo("Subj 16"),
+        SubjectInfo("Subj 17"),
+        SubjectInfo("Subj 18"),
+        SubjectInfo("Subj 19"),
     ]
 
     __labs = [

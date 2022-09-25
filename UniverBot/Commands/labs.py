@@ -1,3 +1,4 @@
+import json
 import math
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -14,47 +15,71 @@ class LabsCmd:
     async def subjects_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         query = update.callback_query
 
+        data = LabsCmd.unpack_data(query.data)
+
+        if data.get('button_type', "") == "change_page":
+            await LabsCmd.show_subjects(query.message, data.get('start', 0), True)
+            return
+
         await query.message.edit_text(f"Вот лабораторки по предмету \"{query.data}\"")
 
     @staticmethod
-    def keyboard_generator(start: int = 0):
+    def keyboard_generator(names: list[str], data: list, start: int = 0) -> InlineKeyboardMarkup:
         keyboard = []
 
-        keyboard.append([
-            InlineKeyboardButton("Далее"),
-            InlineKeyboardButton("Назад")
-        ])
+        names = names[start:]
+        data = data[start:]
 
-    @staticmethod
-    def pack_data(data) -> str:
-        return f"{Query.SelectSubject}:{data}"
-
-    @staticmethod
-    async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        subjects = Labs.get_subjects()
-
-        start_index = 1
-
-        cols = min(math.ceil(len(subjects) / LabsCmd.__max_lines), LabsCmd.__max_cols)
-        count = min(cols * LabsCmd.__max_lines, len(subjects))
-
-        keyboard = []
+        cols = min(math.ceil(len(names) / LabsCmd.__max_lines), LabsCmd.__max_cols)
+        count = min(cols * LabsCmd.__max_lines, len(names))
 
         for l in range(0, count, cols):
             line = []
             for i in range(l, min(count, l + cols)):
-                line.append(InlineKeyboardButton(subjects[i].name, callback_data=f"{Query.SelectSubject}:{i}"))
+                line.append(InlineKeyboardButton(names[i], callback_data=LabsCmd.pack_data(data[i])))
             keyboard.append(line)
 
         last_line = []
 
-        if start_index > 0:
-            last_line.append(InlineKeyboardButton("< Назад", callback_data=f"{Query.SelectSubject}:next"))
-        if count + start_index < len(subjects):
-            last_line.append(InlineKeyboardButton("Далее >", callback_data=f"{Query.SelectSubject}:next"))
+        page_btn_data = {"button_type": "change_page"}
+        if start > 0:
+            page_btn_data["start"] = max(0, start - LabsCmd.__max_lines * LabsCmd.__max_cols)
+            last_line.append(InlineKeyboardButton("< Назад", callback_data=LabsCmd.pack_data(page_btn_data)))
+        if count < len(names):
+            page_btn_data["start"] = count + start
+            last_line.append(InlineKeyboardButton("Далее >", callback_data=LabsCmd.pack_data(page_btn_data)))
 
         keyboard.append(last_line)
 
-        reply_markup = InlineKeyboardMarkup(keyboard)
+        return InlineKeyboardMarkup(keyboard)
 
-        await update.message.reply_text("Выбери предмет, который тебя интересует:", reply_markup=reply_markup)
+    @staticmethod
+    def pack_data(data: dict) -> str:
+        return f"{Query.SelectSubject}:{json.dumps(data)}"
+
+    @staticmethod
+    def unpack_data(data: str) -> dict:
+        parts = data.split(':', 1)
+        if len(parts) < 2:
+            return {}
+        return json.loads(parts[1])
+
+    @staticmethod
+    async def show_subjects(message, start_index: int = 0, edit: bool = False) -> None:
+        text = "Выбери предмет, который тебя интересует:"
+
+        subjects = Labs.get_subjects()
+
+        names = [subj.name for subj in subjects]
+        data = [{} for i in range(len(subjects))]
+
+        reply_markup = LabsCmd.keyboard_generator(names, data, start_index)
+
+        if edit:
+            await message.edit_text(text, reply_markup=reply_markup)
+        else:
+            await message.reply_text(text, reply_markup=reply_markup)
+
+    @staticmethod
+    async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        await LabsCmd.show_subjects(update.message)
