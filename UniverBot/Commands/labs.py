@@ -1,8 +1,4 @@
-import json
-import math
-
-from Word4Univer import SubjectInfo
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton
 from telegram.ext import ContextTypes
 
 from UniverBot.Buttons import PagedKeyboard
@@ -51,7 +47,7 @@ class LabsCmd:
 
         labs = Labs.get_labs(subject_id)
 
-        names = [lab.info.name for lab in labs]
+        names = [lab.info.theme for lab in labs]
         data = [{"lab_id": i} for i in range(len(labs))]
 
         keyboard = PagedKeyboard(Query.SelectLab, names, data)
