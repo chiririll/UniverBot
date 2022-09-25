@@ -1,11 +1,9 @@
-from enum import Enum
-
 from Word4Univer import FullName, StudentInfo, NamePattern
 from loguru import logger
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler, CommandHandler, MessageHandler, filters
 
-from .. import Enums
+from .. import Data
 
 
 class State:
@@ -15,14 +13,14 @@ class State:
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    context.user_data[Enums.UserData.StudentInfo] = StudentInfo()
+    context.user_data[Data.UserData.StudentInfo] = StudentInfo()
 
     await update.message.reply_text("Напиши свое полное имя (ФИО), которое будет написано в титульнике:")
     return State.GetFullName
 
 
 async def __get_student(update: Update, context: ContextTypes.DEFAULT_TYPE) -> StudentInfo:
-    student = context.user_data.get(Enums.UserData.StudentInfo)
+    student = context.user_data.get(Data.UserData.StudentInfo)
     if student is None:
         await __student_null(update, context)
     return student
@@ -91,7 +89,7 @@ async def __finale(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         f"Группа: {student.group}\n"
         f"Вариант: №{student.variant}\n"
         f"\n"
-        f"Если данные введены не правильно, то их можно исправить командой /{Enums.Command.EditData}"
+        f"Если данные введены не правильно, то их можно исправить командой /{Data.Command.EditData}"
     )
 
     return ConversationHandler.END

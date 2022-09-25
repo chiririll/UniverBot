@@ -1,11 +1,10 @@
 import os
 
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ConversationHandler
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler
 from loguru import logger
 
 import Commands
-from UniverBot import Enums, Conversations
+from UniverBot import Data, Conversations
 
 
 def start():
@@ -14,8 +13,13 @@ def start():
     app = ApplicationBuilder().token(os.environ.get("TOKEN")).build()
 
     # Commands
-    app.add_handler(CommandHandler(Enums.Command.Start, Commands.start_handler))
-    app.add_handler(CommandHandler(Enums.Command.Subjects, Commands.subjects_handler))
+    app.add_handler(CommandHandler(Data.Command.Start, Commands.Start.handler))
+    app.add_handler(CommandHandler(Data.Command.Labs, Commands.Labs.handler))
+
+    # Buttons
+    app.add_handler(CallbackQueryHandler(
+        Commands.Labs.subjects_button, pattern=f"{Data.Query.SelectSubject}:*"
+    ))
 
     # Conversations
     app.add_handler(Conversations.build_student_data_handler())

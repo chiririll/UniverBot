@@ -2,17 +2,19 @@ from loguru import logger
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from UniverBot import Enums, Conversations
+from UniverBot.Data import Command
 
 
-async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.info(f"New user: {update.effective_user.first_name} {update.effective_user.last_name}!")
+class StartCmd:
+    @staticmethod
+    async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        logger.info(f"New user: {update.effective_user.first_name} {update.effective_user.last_name}!")
 
-    greetings = f"Привет {update.effective_user.first_name}! " \
-                f"Я умею делать некоторые лабораторки. Но для начала нужно познакомиться."
+        greetings = f"Привет {update.effective_user.first_name}! " \
+                    f"Я умею делать некоторые лабораторки.\n" \
+                    f"\n" \
+                    f"Вот список команд, которые могут тебе пригодиться:\n" \
+                    f"/{Command.EditData} - редактировать данные (ФИО, вариант)\n" \
+                    f"/{Command.Labs} - список доступных лабораторок"
 
-    await update.message.reply_text(greetings)
-
-    state = Conversations.InitState(update, context)
-    context.user_data[Enums.UserData.CurrentState] = state
-    await state.start()
+        await update.message.reply_text(greetings)

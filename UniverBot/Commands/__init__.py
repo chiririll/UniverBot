@@ -1,2 +1,2 @@
-from .start import start_handler
-from .subjects import subjects_handler
+from .start import StartCmd as Start
+from .labs import LabsCmd as Labs
