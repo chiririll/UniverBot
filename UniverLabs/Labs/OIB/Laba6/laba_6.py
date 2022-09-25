@@ -1,8 +1,8 @@
 import json
 import os
 
-from Word4Univer import Lab, StudentInfo, Path, TitlePages, LabInfo
-from Word4Univer.Word.rels import Image
+from word4univer import Lab, StudentInfo, Path, TitlePages, LabInfo
+from word4univer.Word.rels import Image
 
 from .... import Subjects
 from . import threads

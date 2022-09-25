@@ -1,4 +1,4 @@
-from Word4Univer import SubjectInfo, FullName
+from word4univer import SubjectInfo, FullName
 
 OIB = SubjectInfo(
     name="Основы информационной безопасности",

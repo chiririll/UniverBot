@@ -1,6 +1,6 @@
 from typing import Type
 
-from Word4Univer import SubjectInfo, Lab
+from word4univer import SubjectInfo, Lab
 
 import UniverLabs
 

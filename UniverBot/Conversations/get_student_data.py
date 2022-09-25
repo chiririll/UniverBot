@@ -1,4 +1,4 @@
-from Word4Univer import FullName, StudentInfo, NamePattern
+from word4univer import FullName, StudentInfo, NamePattern
 from loguru import logger
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler, CommandHandler, MessageHandler, filters
