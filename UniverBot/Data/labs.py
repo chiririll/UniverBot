@@ -28,15 +28,14 @@ class Labs:
 
     ]
 
-    # TODO: add index for more button
+    @staticmethod
+    def get_subjects() -> list[SubjectInfo]:
+        return Labs.__subjects
 
     @staticmethod
-    def get_subjects(start_index: int = 0) -> list[SubjectInfo]:
-        return Labs.__subjects[start_index:]
+    def get_subject(index: int = 0) -> SubjectInfo:
+        return Labs.__subjects[index]
 
     @staticmethod
-    def get_labs(subject: SubjectInfo = None) -> list[Lab]:
-        if subject is None:
-            return Labs.__labs
-
-        return [lab for lab in Labs.__labs if lab.get_subject().name == subject.name]
+    def get_labs(subject_id: int) -> list[Lab]:
+        return [lab for lab in Labs.__labs if lab.get_subject().name == Labs.__subjects[subject_id].name]

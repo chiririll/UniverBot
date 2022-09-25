@@ -18,7 +18,7 @@ def start():
 
     # Buttons
     app.add_handler(CallbackQueryHandler(
-        Commands.Labs.subjects_button, pattern=f"{Data.Query.SelectSubject}:*"
+        Commands.Labs.subject_button, pattern=f"{Data.Query.SelectSubject}:*"
     ))
 
     # Conversations
