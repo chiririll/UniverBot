@@ -3,75 +3,111 @@ from enum import Enum
 from Word4Univer import FullName, StudentInfo, NamePattern
 from loguru import logger
 from telegram import Update
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, ConversationHandler, CommandHandler, MessageHandler, filters
 
 from .. import Enums
 
 
-class InitSubState(Enum):
-    GetFullName = 0,
-    GetGroup = 1,
+class State:
+    GetFullName = 0
+    GetGroup = 1
     GetVariant = 2
 
 
-class GetStudentData:
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    context.user_data[Enums.UserData.StudentInfo] = StudentInfo()
 
-    messsages = {
-        InitSubState.GetFullName:
-            "Напиши свое полное имя (ФИО), которое будет написано в титульнике:",
-        InitSubState.GetGroup:
-            "Отлично, теперь отправь мне свою группу (Например: СИБ201):",
-        InitSubState.GetVariant:
-            "И последнее, отправь мне номер своего варианта:"
-    }
+    await update.message.reply_text("Напиши свое полное имя (ФИО), которое будет написано в титульнике:")
+    return State.GetFullName
 
-    def __init__(self, update: Update = None, context: ContextTypes.DEFAULT_TYPE = None):
-        self.sub_state = InitSubState.GetFullName
-        self.student = StudentInfo()
 
-        super().__init__(update, context)
+async def __get_student(update: Update, context: ContextTypes.DEFAULT_TYPE) -> StudentInfo:
+    student = context.user_data.get(Enums.UserData.StudentInfo)
+    if student is None:
+        await __student_null(update, context)
+    return student
 
-    async def start(self):
-        self.context.user_data[Enums.UserData.StudentInfo] = self.student
 
-        await self.update.message.reply_text(self.messsages[self.sub_state])
+async def __student_null(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.critical(f"Student info is null! user data: {context.user_data}")
+    await update.message.reply_text("Произошла критическая ошибка!")
+    return
 
-    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        self.update = update
-        self.context = context
 
-        match self.sub_state:
-            case InitSubState.GetFullName:
-                self.student.name = FullName(*NamePattern('SNP').parse_str(update.message.text))
-                self.sub_state = InitSubState.GetGroup
+async def get_fullname(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    student = await __get_student(update, context)
+    if student is None:
+        return ConversationHandler.END
 
-            case InitSubState.GetGroup:
-                self.student.group = update.message.text
-                self.sub_state = InitSubState.GetVariant
+    student.name = FullName(*NamePattern('SNP').parse_str(update.message.text))
 
-            case InitSubState.GetVariant:
-                self.student.variant = int(update.message.text)
-                context.user_data[Enums.UserData.CurrentState] = DefaultState
-                await self.__finale()
-                return
+    await update.message.reply_text("Отлично, теперь отправь мне свою группу (Например: СИБ201):")
+    return State.GetGroup
 
-        await self.update.message.reply_text(self.messsages[self.sub_state])
 
-    async def __finale(self) -> None:
-        student = self.context.user_data.get(Enums.UserData.StudentInfo)
+async def get_group(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    student = await __get_student(update, context)
+    if student is None:
+        return ConversationHandler.END
 
-        if student is None:
-            logger.critical(f"Student info is null! user data: {self.context.user_data}")
-            await self.update.message.reply_text("Произошла критическая ошибка!")
-            return
+    student.group = update.message.text
 
-        await self.update.message.reply_text(
-            "Все, теперь я запомнил твои данные и их не надо будет каждый раз вводить заново.\n"
-            "Давай проверим:\n"
-            "\n"
-            f"ФИО: {student.name}\n"
-            f"Группа: {student.group}\n"
-            f"Вариант: №{student.variant}\n"
-            f"\n"
-            f"Если данные введены не правильно, то их можно исправить командой /{Enums.Command.EditData}"
-        )
+    await update.message.reply_text("И последнее, отправь мне номер своего варианта:")
+    return State.GetVariant
+
+
+async def get_variant(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    student = await __get_student(update, context)
+    if student is None:
+        return ConversationHandler.END
+
+    try:
+        student.variant = int(update.message.text)
+    except ValueError:
+        await update.message.reply_text("Неправилиный формат варианта! Ожидается целое число.")
+        return State.GetVariant
+
+    return await __finale(update, context)
+
+
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text("Ок, отменяю.")
+    return ConversationHandler.END
+
+
+async def __finale(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    student = await __get_student(update, context)
+    if student is None:
+        return ConversationHandler.END
+
+    if student is None:
+        await __student_null(update, context)
+
+    await update.message.reply_text(
+        "Все, теперь я запомнил твои данные и их не надо будет каждый раз вводить заново.\n"
+        "Давай проверим:\n"
+        "\n"
+        f"ФИО: {student.name}\n"
+        f"Группа: {student.group}\n"
+        f"Вариант: №{student.variant}\n"
+        f"\n"
+        f"Если данные введены не правильно, то их можно исправить командой /{Enums.Command.EditData}"
+    )
+
+    return ConversationHandler.END
+
+
+def build_student_data_handler() -> ConversationHandler:
+    return ConversationHandler(
+        entry_points=[
+            CommandHandler('editdata', start)
+        ],
+        fallbacks=[
+            CommandHandler('cancel', cancel)
+        ],
+        states={
+            State.GetFullName: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_fullname)],
+            State.GetGroup: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_group)],
+            State.GetVariant: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_variant)],
+        }
+    )

@@ -5,7 +5,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ConversationHandler
 from loguru import logger
 
 import Commands
-from UniverBot import Enums
+from UniverBot import Enums, Conversations
 
 
 def start():
@@ -15,13 +15,10 @@ def start():
 
     # Commands
     app.add_handler(CommandHandler(Enums.Command.Start, Commands.start_handler))
-    app.add_handler(CommandHandler(Enums.Command.EditData, Commands.edit_data_handler))
     app.add_handler(CommandHandler(Enums.Command.Subjects, Commands.subjects_handler))
 
     # Conversations
-    app.add_handler(ConversationHandler(
-
-    ))
+    app.add_handler(Conversations.build_student_data_handler())
 
     # Messages
     # app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
